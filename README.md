@@ -22,25 +22,29 @@ Notes:
 - The API envelope is `{ statusCode, result: { data, error } }`, so conditions
   target `[BODY].result.data...`.
 
-## Run on Fly.io
+## Run on a DigitalOcean droplet (recommended — outside AWS)
+
+1. Create the smallest droplet (1GB / ~$6) with Docker, in any region.
+2. Point `health.justaname.id` **A record** at the droplet IP; open ports 80 + 443.
+3. On the droplet:
 
 ```bash
-fly launch --no-deploy --copy-config --name justaname-status --region fra
-fly volumes create gatus_data --region fra --size 1
-fly secrets set RPC_URL="https://lb.drpc.live/ethereum/<KEY>" \
-                SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
-fly deploy
-fly certs add health.justaname.id   # then add the CNAME in DNS
+git clone <this-repo> && cd gatus-justaname
+cp .env.example .env          # fill in RPC_URL, KNOWN_NAME, KNOWN_ADDRESS, SLACK_WEBHOOK_URL
+docker compose up -d          # Gatus + Caddy (auto-HTTPS)
 ```
 
-Edit `KNOWN_NAME` / `KNOWN_ADDRESS` / `EXPECTED_ADDRESS` in `fly.toml`.
+Caddy fetches the TLS cert automatically; the page is live at
+`https://health.justaname.id` within a minute. `config.yaml`, `Caddyfile`, and
+the SQLite history persist in Docker volumes across restarts.
 
-## Run locally / on a VPS
+> For a droplet that can be recreated, mount a DO Block Storage volume and back
+> the `gatus-data` / `caddy-data` volumes with it so history + certs survive.
 
-```bash
-cp .env.example .env   # fill in
-docker compose up -d   # status page on :8080
-```
+## Alternative: Fly.io
+
+`fly.toml` + `Dockerfile` are included for a Fly deploy instead (bakes config
+into the image, no auto-stop, volume for history). See the manifest comments.
 
 ## Multi-region (for the 99.9% SLA)
 

@@ -1,15 +1,36 @@
+# Gatus + Caddy on a DigitalOcean droplet (outside AWS).
+# Caddy terminates TLS and auto-issues a Let's Encrypt cert for the domain in
+# Caddyfile — point health.justaname.id's A record at the droplet IP first.
+
 services:
   gatus:
     image: twinproduction/gatus:latest
     container_name: gatus-justaname
-    ports:
-      - "8080:8080"        # status page + API; put Caddy/Cloudflare in front for TLS
+    # No host port: Caddy reaches it over the internal compose network.
+    expose:
+      - "8080"
     volumes:
       - ./config.yaml:/config/config.yaml:ro
-      - gatus-data:/data   # SQLite history survives restarts
+      - gatus-data:/data       # SQLite history survives restarts
     env_file:
       - .env
     restart: unless-stopped
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy-justaname
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data        # persisted certs — don't lose these
+      - caddy-config:/config
+    depends_on:
+      - gatus
+    restart: unless-stopped
+
 volumes:
   gatus-data:
+  caddy-data:
+  caddy-config:
