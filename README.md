@@ -8,6 +8,8 @@ Built on [Gatus](https://github.com/TwiN/gatus). Runs on a DigitalOcean droplet
 — **outside** the AWS/EKS infra it monitors, so the status page stays up to
 report an outage instead of going down with it.
 
+![JustaName status page — health dashboard with all checks green](./docs/status-page-screenshot.png)
+
 ## Checks
 
 | Group | Check | Endpoint | Asserts |
