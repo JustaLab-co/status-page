@@ -1,0 +1,15 @@
+services:
+  gatus:
+    image: twinproduction/gatus:latest
+    container_name: gatus-justaname
+    ports:
+      - "8080:8080"        # status page + API; put Caddy/Cloudflare in front for TLS
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
+      - gatus-data:/data   # SQLite history survives restarts
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  gatus-data:

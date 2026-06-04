@@ -1,0 +1,113 @@
+# Gatus config for health.justaname.id
+# Monitors api.justaname.id — CCIP-Read resolution + reverse + liveness.
+#
+# IMPORTANT — run this OUTSIDE your AWS/EKS (Fly.io, Oracle Cloud Always Free,
+# a small VPS in another provider/region). If it runs in the same infra it
+# monitors, it goes down exactly when you need it to report the outage.
+#
+# Secrets: Gatus interpolates ${ENV_VAR}. Set RPC_URL to your dRPC https URL
+# (the only RPC we found reliable for CCIP-Read). Supplying it via the
+# X-Rpc-Url header makes /v2/resolve FREE (BYO compute) — without it the
+# endpoint is PAID and returns a 402 challenge, which you do NOT want to probe.
+
+storage:
+  type: sqlite
+  path: /data/gatus.db        # persist history (mount a volume here)
+
+  # --- Multi-region with UNIFIED history ------------------------------------
+  # SQLite is per-machine: each region keeps its own DB, so a 2-instance setup
+  # shows two separate histories. To merge all vantage points into one status
+  # page, point every instance at a shared Postgres instead and comment out the
+  # two sqlite lines above:
+  #
+  # type: postgres
+  # path: "${DATABASE_URL}"   # postgres://user:pass@host:5432/gatus?sslmode=require
+  #
+  # Set it as a secret (never in this file):  fly secrets set DATABASE_URL=...
+  # Use a small managed Postgres outside your AWS (Fly Postgres, Supabase free,
+  # Neon free). Drop the [mounts] volume from fly.toml once you're on Postgres.
+  # --------------------------------------------------------------------------
+
+ui:
+  title: JustaName Status
+  header: JustaName · api.justaname.id
+  description: Public uptime for the JustaName CCIP-Read gateway and resolution API.
+
+# Optional: lower the bar for what counts as "up" globally; per-endpoint
+# conditions below are the real SLA gate.
+metrics: true                 # exposes /metrics for Prometheus/Grafana if you want
+
+endpoints:
+  # ---------------------------------------------------------------------------
+  # 1. Liveness — cheap, public, no auth, no payment, no RPC.
+  #    /.well-known/x402.json is unversioned at the root and always public.
+  # ---------------------------------------------------------------------------
+  - name: api-liveness
+    group: API
+    url: "https://api.justaname.id/.well-known/x402.json"
+    interval: 30s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 1500"
+      - "has([BODY].x402Version)"        # it's real JSON, not a CDN error page
+    alerts:
+      - type: slack
+
+  # ---------------------------------------------------------------------------
+  # 2. Forward resolution through the CCIP-Read flow (the core promise).
+  #    viaUniversalResolver == true proves the CCIP-Read / Universal Resolver
+  #    path actually ran — not just that the server returned 200.
+  #    X-Rpc-Url makes this free; without it you'd hit the 402 paywall.
+  # ---------------------------------------------------------------------------
+  - name: ccip-read-resolve
+    group: CCIP-Read gateway
+    url: "https://api.justaname.id/v2/resolve?ens=${KNOWN_NAME}&coinType=60"
+    interval: 60s
+    headers:
+      X-Rpc-Url: "${RPC_URL}"
+      Accept: "application/json"
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 4000"
+      - "[BODY].result.error == null"
+      - "[BODY].result.data.viaUniversalResolver == true"
+      - "[BODY].result.data.ens == ${KNOWN_NAME}"
+      # Optional stronger correctness check — confirm the resolved ETH address.
+      # Run the request once by hand to confirm the exact JSON path, then enable:
+      # - "[BODY].result.data.records.coins[0].value == ${EXPECTED_ADDRESS}"
+    alerts:
+      - type: slack
+        send-on-resolved: true
+
+  # ---------------------------------------------------------------------------
+  # 3. Reverse resolution (ENSIP-19) — second public surface.
+  # ---------------------------------------------------------------------------
+  - name: reverse-resolution
+    group: Resolution API
+    url: "https://api.justaname.id/v2/reverse?address=${KNOWN_ADDRESS}"
+    interval: 60s
+    headers:
+      X-Rpc-Url: "${RPC_URL}"
+      Accept: "application/json"
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 4000"
+      - "[BODY].result.error == null"
+    alerts:
+      - type: slack
+        send-on-resolved: true
+
+# ---------------------------------------------------------------------------
+# Alerting — fill in the Slack webhook (or swap for pagerduty/discord/email).
+# failure-threshold/success-threshold avoid flapping on a single blip; with a
+# 99.9% monthly target (~43 min/mo) you want a couple of consecutive fails
+# before paging, ideally confirmed from >1 region (run a 2nd Gatus elsewhere).
+# ---------------------------------------------------------------------------
+alerting:
+  slack:
+    webhook-url: "${SLACK_WEBHOOK_URL}"
+    default-alert:
+      failure-threshold: 3
+      success-threshold: 2
+      send-on-resolved: true
+      description: "JustaName health check failing"
