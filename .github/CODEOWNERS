@@ -11,5 +11,3 @@
 # Deploy & infra
 /Caddyfile              @mariano-aguero
 /docker-compose*.yml    @mariano-aguero
-/Dockerfile             @mariano-aguero
-/fly.toml               @mariano-aguero

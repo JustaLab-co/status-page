@@ -74,5 +74,4 @@ block in `config.yaml`).
 - `docker-compose.yml` — Gatus + Caddy (prod, auto-HTTPS)
 - `docker-compose.local.yml` — Gatus only, `localhost:8080` (preview)
 - `Caddyfile` — reverse proxy + Let's Encrypt for `health.justaname.id`
-- `fly.toml` + `Dockerfile` — optional Fly.io deploy instead of DO
 - `.env.example` — required environment variables

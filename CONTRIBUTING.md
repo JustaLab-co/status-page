@@ -6,7 +6,7 @@ small and config-driven (Gatus + Docker), so most contributions are quick.
 ## Ways to contribute
 
 - **Add or tune a check** — edit `config.yaml` (endpoints, conditions, intervals).
-- **Fix the deploy** — `Caddyfile`, `docker-compose*.yml`, `fly.toml`, `DEPLOY.md`.
+- **Fix the deploy** — `Caddyfile`, `docker-compose*.yml`, `DEPLOY.md`.
 - **Docs** — clarify the README/DEPLOY for the next person.
 - **Report an issue** — use the issue templates.
 

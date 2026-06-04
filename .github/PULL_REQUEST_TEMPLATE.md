@@ -5,7 +5,7 @@
 ## Type of change
 
 - [ ] New / updated check (`config.yaml`)
-- [ ] Deploy / infra (`Caddyfile`, compose, `fly.toml`, `Dockerfile`)
+- [ ] Deploy / infra (`Caddyfile`, compose)
 - [ ] Docs
 - [ ] Other
 

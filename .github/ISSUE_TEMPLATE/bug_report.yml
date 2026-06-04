@@ -22,7 +22,7 @@ body:
       label: Affected area
       options:
         - A check / endpoint (config.yaml)
-        - Deploy / infra (Caddy, Docker, Fly)
+        - Deploy / infra (Caddy, Docker)
         - The status page UI
         - Docs
         - Other

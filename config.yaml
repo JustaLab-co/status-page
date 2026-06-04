@@ -1,9 +1,10 @@
 # Gatus config for health.justaname.id
 # Monitors api.justaname.id — CCIP-Read resolution + reverse + liveness.
 #
-# IMPORTANT — run this OUTSIDE your AWS/EKS (Fly.io, Oracle Cloud Always Free,
-# a small VPS in another provider/region). If it runs in the same infra it
-# monitors, it goes down exactly when you need it to report the outage.
+# IMPORTANT — run this OUTSIDE your AWS/EKS (a DigitalOcean droplet, Oracle
+# Cloud Always Free, or a small VPS in another provider/region). If it runs in
+# the same infra it monitors, it goes down exactly when you need it to report
+# the outage.
 #
 # Secrets: Gatus interpolates ${ENV_VAR}. Set RPC_URL to your dRPC https URL
 # (the only RPC we found reliable for CCIP-Read). Supplying it via the
@@ -23,9 +24,9 @@ storage:
   # type: postgres
   # path: "${DATABASE_URL}"   # postgres://user:pass@host:5432/gatus?sslmode=require
   #
-  # Set it as a secret (never in this file):  fly secrets set DATABASE_URL=...
-  # Use a small managed Postgres outside your AWS (Fly Postgres, Supabase free,
-  # Neon free). Drop the [mounts] volume from fly.toml once you're on Postgres.
+  # Set it via the environment (never in this file): DATABASE_URL=... in .env
+  # Use a small managed Postgres outside your AWS (Supabase free, Neon free).
+  # Drop the gatus-data volume from docker-compose.yml once you're on Postgres.
   # --------------------------------------------------------------------------
 
 ui:
