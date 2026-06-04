@@ -5,7 +5,7 @@
 services:
   gatus:
     image: twinproduction/gatus:latest
-    container_name: gatus-justaname
+    container_name: status-page-gatus
     # No host port: Caddy reaches it over the internal compose network.
     expose:
       - "8080"
@@ -18,7 +18,7 @@ services:
 
   caddy:
     image: caddy:2-alpine
-    container_name: caddy-justaname
+    container_name: status-page-caddy
     ports:
       - "80:80"
       - "443:443"

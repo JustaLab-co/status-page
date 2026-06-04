@@ -121,23 +121,21 @@ endpoints:
 
   # ---------------------------------------------------------------------------
   # 4. Bundler RPC (ERC-4337) — POST JSON-RPC per chain at /proxy/v1/rpc.
-  #    eth_chainId is trivial (no heavy on-chain compute). Needs an api key WITH
-  #    bundler access (BUNDLER_API_KEY) — shows 403 until that's set.
-  #    `result` is the hex chainId. NOTE: confirm the response shape with a real
-  #    key — if the proxy wraps it in the {result:{data}} envelope, change
-  #    [BODY].result to [BODY].result.data on these two checks.
+  #    Auth: the api key goes as the `api-key` QUERY PARAM (not a header) — any
+  #    valid JustaName api key works, no special bundler key needed. eth_chainId
+  #    is trivial (no heavy on-chain compute). The POST returns 201 and a RAW
+  #    JSON-RPC body ({jsonrpc,id,result}), so result is the hex chainId directly.
   # ---------------------------------------------------------------------------
   - name: bundler-base
     group: Bundler
-    url: "https://api.justaname.id/proxy/v1/rpc?chainId=8453"
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=8453&api-key=${BUNDLER_API_KEY}"
     method: POST
-    interval: 60s
+    interval: 300s
     headers:
       Content-Type: application/json
-      x-api-key: "${BUNDLER_API_KEY}"
     body: '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
     conditions:
-      - "[STATUS] == 200"
+      - "[STATUS] == 201"
       - "[RESPONSE_TIME] < 3000"
       - "[BODY].result == 0x2105"        # 8453
     alerts:
@@ -145,15 +143,14 @@ endpoints:
 
   - name: bundler-ethereum
     group: Bundler
-    url: "https://api.justaname.id/proxy/v1/rpc?chainId=1"
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=1&api-key=${BUNDLER_API_KEY}"
     method: POST
-    interval: 60s
+    interval: 300s
     headers:
       Content-Type: application/json
-      x-api-key: "${BUNDLER_API_KEY}"
     body: '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
     conditions:
-      - "[STATUS] == 200"
+      - "[STATUS] == 201"
       - "[RESPONSE_TIME] < 3000"
       - "[BODY].result == 0x1"           # 1
     alerts:

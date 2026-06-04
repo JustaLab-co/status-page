@@ -1,59 +1,76 @@
-# gatus-justaname
+# JustaName Status Page
 
 Public uptime monitoring + status page for **health.justaname.id**, watching
-`api.justaname.id` (CCIP-Read gateway, resolution endpoints) with a 99.9%
-monthly uptime target.
+`api.justaname.id` (CCIP-Read gateway, resolution endpoints, bundler RPC) with a
+99.9% monthly uptime target.
 
-Built on [Gatus](https://github.com/TwiN/gatus). Runs on Fly.io — **outside**
-the AWS/EKS infra it monitors, so the status page survives a prod outage.
+Built on [Gatus](https://github.com/TwiN/gatus). Runs on a DigitalOcean droplet
+— **outside** the AWS/EKS infra it monitors, so the status page stays up to
+report an outage instead of going down with it.
 
 ## Checks
 
-| Check | Endpoint | Asserts |
-|-------|----------|---------|
-| Liveness | `GET /.well-known/x402.json` | server up (public, no auth/payment) |
-| CCIP-Read | `GET /v2/resolve?ens=…` | `viaUniversalResolver == true`, no error, correct `ens` |
-| Reverse | `GET /v2/reverse?address=…` | no error |
+| Group | Check | Endpoint | Asserts |
+|-------|-------|----------|---------|
+| API | liveness | `GET /.well-known/x402.json` | server up (public, no auth/RPC) |
+| CCIP-Read gateway | resolve | `GET /ens/v2/resolve?ens=…` | `viaUniversalResolver==true`, correct `ens` |
+| CCIP-Read gateway | batch resolve | `GET /ens/v2/resolve?ens=a&ens=b` | array response, first `ens` correct |
+| Resolution API | reverse | `GET /ens/v2/reverse?address=…&coinType=60` | resolves without error |
+| Bundler | base / ethereum | `POST /proxy/v1/rpc?chainId=…` `eth_chainId` | returns the right hex chainId |
 
-Notes:
-- `/v2/resolve` is **paid** without an rpcUrl (402 challenge). We pass the dRPC
-  URL via the `X-Rpc-Url` header to make probes free and keep the key out of
-  access logs.
-- The API envelope is `{ statusCode, result: { data, error } }`, so conditions
-  target `[BODY].result.data...`.
+The resolution checks assert **correctness, not just a 200**: `viaUniversalResolver`
+is only `true` when the request actually went through the Universal Resolver /
+CCIP-Read path, so a gateway returning 200 with garbage still counts as down.
 
-## Run on a DigitalOcean droplet (recommended — outside AWS)
+## Cost — effectively $0
 
-1. Create the smallest droplet (1GB / ~$6) with Docker, in any region.
-2. Point `health.justaname.id` **A record** at the droplet IP; open ports 80 + 443.
-3. On the droplet:
+- **Liveness**: static JSON, no auth, no RPC. Free.
+- **Resolution** (resolve/batch/reverse): we pass a **free public RPC**
+  (PublicNode) via `X-Rpc-Url`, so the on-chain compute is paid by the public
+  node, **not JustaName's dRPC account**. No api key either (free BYO-rpc path).
+- **Bundler**: `eth_chainId` is answered locally by the bundler (never reaches
+  dRPC). The only cost is the api-key validation the guard runs per request —
+  internal load, not money. Runs every 5min to keep that minimal.
+
+So the whole page costs ~$0 in RPC/spend; the only thing to watch is the api
+key's own quota for the bundler checks.
+
+## Intervals
+
+`liveness` 30s (free, fast full-outage detector) · everything else 5min (the
+resolution checks lean on a free public RPC, so we don't probe it aggressively).
+
+## Deploy
+
+See **[DEPLOY.md](./DEPLOY.md)** for the full DigitalOcean walkthrough (droplet,
+DNS, secrets, TLS). Short version:
 
 ```bash
-git clone <this-repo> && cd gatus-justaname
-cp .env.example .env          # fill in RPC_URL, KNOWN_NAME, KNOWN_ADDRESS, SLACK_WEBHOOK_URL
-docker compose up -d          # Gatus + Caddy (auto-HTTPS)
+git clone https://github.com/JustaName-id/status-page.git && cd status-page
+cp .env.example .env     # fill in RPC_URL, KNOWN_NAME(_2), KNOWN_ADDRESS, BUNDLER_API_KEY, SLACK_WEBHOOK_URL
+docker compose up -d     # Gatus + Caddy (auto-HTTPS for health.justaname.id)
 ```
 
-Caddy fetches the TLS cert automatically; the page is live at
-`https://health.justaname.id` within a minute. `config.yaml`, `Caddyfile`, and
-the SQLite history persist in Docker volumes across restarts.
+## Local preview
 
-> For a droplet that can be recreated, mount a DO Block Storage volume and back
-> the `gatus-data` / `caddy-data` volumes with it so history + certs survive.
+```bash
+cp .env.example .env
+docker compose -f docker-compose.local.yml up   # http://localhost:8080, no TLS
+```
 
-## Alternative: Fly.io
-
-`fly.toml` + `Dockerfile` are included for a Fly deploy instead (bakes config
-into the image, no auto-stop, volume for history). See the manifest comments.
+Probes still hit prod, so you see real results. History here is throwaway.
 
 ## Multi-region (for the 99.9% SLA)
 
-Run instances in 2+ regions and confirm down from more than one vantage point.
-For unified history switch `storage` to Postgres (block is in `config.yaml`).
+Run instances in 2+ regions and confirm "down" from more than one vantage point.
+For unified history across regions, switch `storage` to Postgres (commented
+block in `config.yaml`).
 
 ## Files
 
-- `config.yaml` — Gatus checks + UI + alerting
-- `Dockerfile` — bakes the config into the image (Fly mounts no files)
-- `fly.toml` — Fly manifest (no auto-stop, volume, health check)
-- `docker-compose.yml` + `.env.example` — local/VPS alternative
+- `config.yaml` — Gatus checks, UI, alerting
+- `docker-compose.yml` — Gatus + Caddy (prod, auto-HTTPS)
+- `docker-compose.local.yml` — Gatus only, `localhost:8080` (preview)
+- `Caddyfile` — reverse proxy + Let's Encrypt for `health.justaname.id`
+- `fly.toml` + `Dockerfile` — optional Fly.io deploy instead of DO
+- `.env.example` — required environment variables

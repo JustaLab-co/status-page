@@ -2,7 +2,7 @@
 # Runs on Fly (not AWS) so the status page survives an api.justaname.id outage.
 # Rename `app` to something unique before first deploy.
 
-app = "justaname-status"
+app = "justaname-status-page"
 primary_region = "fra"          # Frankfurt — close to prod for low-latency probes,
                                 # different provider from your AWS. Add more regions
                                 # later for multi-vantage-point checks.
