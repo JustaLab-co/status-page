@@ -1,0 +1,15 @@
+# Code owners for the JustaName status page.
+# These owners are requested for review automatically on every PR.
+# See https://docs.github.com/articles/about-code-owners
+
+# Default owner for everything in the repo
+*               @mariano-aguero
+
+# Monitoring config — the heart of the status page
+/config.yaml    @mariano-aguero
+
+# Deploy & infra
+/Caddyfile              @mariano-aguero
+/docker-compose*.yml    @mariano-aguero
+/Dockerfile             @mariano-aguero
+/fly.toml               @mariano-aguero

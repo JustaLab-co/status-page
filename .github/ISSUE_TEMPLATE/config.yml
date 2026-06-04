@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability or leaked secret
+    url: https://github.com/JustaName-id/status-page/security/advisories/new
+    about: Report privately. Do not open a public issue for security problems.
+  - name: JustaName status page (live)
+    url: https://health.justaname.id
+    about: Check the live status before filing — the issue may already be visible there.

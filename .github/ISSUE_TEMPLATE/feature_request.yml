@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest a new check or improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the problem or gap?
+      description: What would you like the status page to monitor or do?
+      placeholder: e.g. Add a check for the new sepolia bundler endpoint.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        If it's a new check, include the endpoint, the assertion(s) that prove
+        correctness (not just a 200), and a sensible interval. Keep it on the
+        free-by-default RPC path where possible.
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
