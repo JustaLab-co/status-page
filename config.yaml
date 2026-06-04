@@ -49,7 +49,7 @@ endpoints:
     conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 1500"
-      - "has([BODY].x402Version)"        # it's real JSON, not a CDN error page
+      - "[BODY].x402Version != \"\""     # it's real JSON, not a CDN error page
     alerts:
       - type: slack
 
@@ -61,15 +61,19 @@ endpoints:
   # ---------------------------------------------------------------------------
   - name: ccip-read-resolve
     group: CCIP-Read gateway
-    url: "https://api.justaname.id/v2/resolve?ens=${KNOWN_NAME}&coinType=60"
-    interval: 60s
+    url: "https://api.justaname.id/ens/v2/resolve?ens=${KNOWN_NAME}&coinType=60"
+    # Uses RPC_URL (a FREE public node) via X-Rpc-Url, so it costs nothing on
+    # JustaName's dRPC account. Kept at 5min on purpose: free public RPCs rate-
+    # limit and can disappear, so we don't lean on one with frequent probes.
+    # The free liveness check below is the fast (30s) full-outage detector.
+    interval: 300s
     headers:
       X-Rpc-Url: "${RPC_URL}"
       Accept: "application/json"
     conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 4000"
-      - "[BODY].result.error == null"
+      - "[BODY].statusCode == 200"        # envelope status (error path returns non-200 here)
       - "[BODY].result.data.viaUniversalResolver == true"
       - "[BODY].result.data.ens == ${KNOWN_NAME}"
       # Optional stronger correctness check — confirm the resolved ETH address.
@@ -80,22 +84,80 @@ endpoints:
         send-on-resolved: true
 
   # ---------------------------------------------------------------------------
+  # 2b. Batch resolve — exercises the multi-name path (?ens=a&ens=b). Response
+  #     is an ARRAY here, so the conditions index into [0]. Still free (PublicNode).
+  # ---------------------------------------------------------------------------
+  - name: ccip-read-resolve-batch
+    group: CCIP-Read gateway
+    url: "https://api.justaname.id/ens/v2/resolve?ens=${KNOWN_NAME}&ens=${KNOWN_NAME_2}&coinType=60"
+    interval: 300s
+    headers:
+      X-Rpc-Url: "${RPC_URL}"
+      Accept: "application/json"
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[BODY].statusCode == 200"
+      - "[BODY].result.data[0].ens == ${KNOWN_NAME}"
+
+  # ---------------------------------------------------------------------------
   # 3. Reverse resolution (ENSIP-19) — second public surface.
   # ---------------------------------------------------------------------------
   - name: reverse-resolution
     group: Resolution API
-    url: "https://api.justaname.id/v2/reverse?address=${KNOWN_ADDRESS}"
-    interval: 60s
+    url: "https://api.justaname.id/ens/v2/reverse?address=${KNOWN_ADDRESS}&coinType=60"
+    # Free via PublicNode (X-Rpc-Url), same as resolve.
+    interval: 300s
     headers:
       X-Rpc-Url: "${RPC_URL}"
       Accept: "application/json"
     conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 4000"
-      - "[BODY].result.error == null"
+      - "[BODY].statusCode == 200"
     alerts:
       - type: slack
         send-on-resolved: true
+
+  # ---------------------------------------------------------------------------
+  # 4. Bundler RPC (ERC-4337) — POST JSON-RPC per chain at /proxy/v1/rpc.
+  #    eth_chainId is trivial (no heavy on-chain compute). Needs an api key WITH
+  #    bundler access (BUNDLER_API_KEY) — shows 403 until that's set.
+  #    `result` is the hex chainId. NOTE: confirm the response shape with a real
+  #    key — if the proxy wraps it in the {result:{data}} envelope, change
+  #    [BODY].result to [BODY].result.data on these two checks.
+  # ---------------------------------------------------------------------------
+  - name: bundler-base
+    group: Bundler
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=8453"
+    method: POST
+    interval: 60s
+    headers:
+      Content-Type: application/json
+      x-api-key: "${BUNDLER_API_KEY}"
+    body: '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 3000"
+      - "[BODY].result == 0x2105"        # 8453
+    alerts:
+      - type: slack
+
+  - name: bundler-ethereum
+    group: Bundler
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=1"
+    method: POST
+    interval: 60s
+    headers:
+      Content-Type: application/json
+      x-api-key: "${BUNDLER_API_KEY}"
+    body: '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 3000"
+      - "[BODY].result == 0x1"           # 1
+    alerts:
+      - type: slack
 
 # ---------------------------------------------------------------------------
 # Alerting — fill in the Slack webhook (or swap for pagerduty/discord/email).

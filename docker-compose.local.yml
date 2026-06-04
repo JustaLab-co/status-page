@@ -1,0 +1,18 @@
+# Local preview — just Gatus on http://localhost:8080, no Caddy/TLS.
+#   docker compose -f docker-compose.local.yml up
+# The probes still hit PROD (api.justaname.id) from your machine, so you see
+# real check results. History lives in a throwaway volume.
+services:
+  gatus:
+    image: twinproduction/gatus:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
+      - gatus-local-data:/data     # config.yaml stores SQLite at /data/gatus.db
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  gatus-local-data:
