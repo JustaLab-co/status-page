@@ -126,6 +126,8 @@ endpoints:
   #    valid JustaName api key works, no special bundler key needed. eth_chainId
   #    is trivial (no heavy on-chain compute). The POST returns 201 and a RAW
   #    JSON-RPC body ({jsonrpc,id,result}), so result is the hex chainId directly.
+  #    RESPONSE_TIME is 5000 (vs 3000 elsewhere): the proxy regularly spikes to
+  #    3-5s on these endpoints, so a lower bar pages on noise rather than outages.
   # ---------------------------------------------------------------------------
   - name: bundler-base
     group: Bundler
@@ -137,7 +139,7 @@ endpoints:
     body: '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
     conditions:
       - "[STATUS] == 201"
-      - "[RESPONSE_TIME] < 3000"
+      - "[RESPONSE_TIME] < 5000"
       - "[BODY].result == 0x2105"        # 8453
     alerts:
       - type: slack
@@ -152,7 +154,7 @@ endpoints:
     body: '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
     conditions:
       - "[STATUS] == 201"
-      - "[RESPONSE_TIME] < 3000"
+      - "[RESPONSE_TIME] < 5000"
       - "[BODY].result == 0x1"           # 1
     alerts:
       - type: slack
