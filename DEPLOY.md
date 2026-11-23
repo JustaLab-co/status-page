@@ -65,7 +65,7 @@ Required in `.env`:
 | `KNOWN_NAME` | A name that always resolves in prod (single-resolve check). |
 | `KNOWN_NAME_2` | A second name for the batch-resolve check. |
 | `KNOWN_ADDRESS` | An address with a stable reverse record. |
-| `BUNDLER_API_KEY` | Any valid JustaName api key (passed as `?api-key=`). Prefer a monitoring-only key; if it has a domain allowlist, add the monitor's domain or use one without an allowlist. |
+| `BUNDLER_API_KEY` | Any valid JustaName api key (passed as `?api-key=`). The bundler and paymaster checks use it. Prefer a monitoring-only key; if it has a domain allowlist, add the monitor's domain or use one without an allowlist. |
 | `SLACK_WEBHOOK_URL` | Incoming webhook for alerts. |
 
 `EXPECTED_ADDRESS` is optional (enables the strongest resolve assertion — see
@@ -74,10 +74,10 @@ the commented condition in `config.yaml`).
 ## 6. Launch
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-This starts **Gatus** + **Caddy**. Caddy automatically fetches a Let's Encrypt
+This builds the public page and starts **Gatus**, the page (`web`) and **Caddy**. Caddy routes the domain to the page only. Caddy automatically fetches a Let's Encrypt
 cert for `health.justaname.id` (that's why DNS must be live first). Within a
 minute:
 
@@ -88,13 +88,18 @@ https://health.justaname.id   ->  the status page
 ## 7. Verify
 
 ```bash
-docker compose ps                  # both containers Up
+docker compose ps                  # gatus, web and caddy Up
 docker compose logs -f gatus       # check config loaded, no panics
 curl -s localhost:8080/health      # gatus liveness -> 200
 ```
 
-Open `https://health.justaname.id` — all checks should be green (the bundler
-ones need a valid `BUNDLER_API_KEY`).
+Open `https://health.justaname.id`. Every check should show as operational (the bundler and paymaster ones need a valid `BUNDLER_API_KEY`).
+
+The Gatus dashboard, with conditions and history, is internal. It listens on the droplet's loopback only, so open it through an SSH tunnel:
+
+```bash
+ssh -L 8080:localhost:8080 root@<droplet-ip>   # then http://localhost:8080
+```
 
 ---
 
@@ -104,6 +109,7 @@ ones need a valid `BUNDLER_API_KEY`).
 ```bash
 git pull
 docker compose restart gatus       # reloads config.yaml (bind-mounted)
+docker compose up -d --build web   # rebuilds the public page after web/ changes
 ```
 
 **Change a secret in `.env`** — a `restart` does NOT reload env vars; recreate:
@@ -137,6 +143,7 @@ these at it so history + certs survive a rebuild.
   allowlist.
 - **Caddy can't get a cert** → DNS not pointing at the droplet yet, or 80/443
   blocked. Confirm `dig +short health.justaname.id` and the firewall.
+- **The page says "Status unavailable"** → the page cannot read Gatus, or Gatus has not finished its first probes. Check `docker compose logs web` and `docker compose ps gatus`.
 
 ---
 
