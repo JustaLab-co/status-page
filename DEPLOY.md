@@ -95,6 +95,13 @@ curl -s localhost:8080/health      # gatus liveness -> 200
 
 Open `https://health.justaname.id`. Every check should show as operational (the bundler and paymaster ones need a valid `BUNDLER_API_KEY`).
 
+Gatus must not answer on the public domain. Both of these should print 404:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://health.justaname.id/api/v1/endpoints/statuses
+curl -s -o /dev/null -w '%{http_code}\n' https://health.justaname.id/metrics
+```
+
 The Gatus dashboard, with conditions and history, is internal. It listens on the droplet's loopback only, so open it through an SSH tunnel:
 
 ```bash
@@ -110,6 +117,12 @@ ssh -L 8080:localhost:8080 root@<droplet-ip>   # then http://localhost:8080
 git pull
 docker compose restart gatus       # reloads config.yaml (bind-mounted)
 docker compose up -d --build web   # rebuilds the public page after web/ changes
+```
+
+**Upgrade from the Gatus-only setup** (once). `--force-recreate` makes Caddy load the new Caddyfile, which routes to the public page instead of Gatus. Then run the 404 checks from step 7.
+```bash
+git pull
+docker compose up -d --build --force-recreate
 ```
 
 **Change a secret in `.env`** — a `restart` does NOT reload env vars; recreate:
