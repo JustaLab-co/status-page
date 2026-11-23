@@ -1,19 +1,34 @@
-# Gatus + Caddy on a DigitalOcean droplet (outside AWS).
+# Gatus + the public page + Caddy on a DigitalOcean droplet (outside AWS).
 # Caddy terminates TLS and auto-issues a Let's Encrypt cert for the domain in
 # Caddyfile — point health.justaname.id's A record at the droplet IP first.
+# Caddy routes only to the public page. Gatus stays internal.
 
 services:
   gatus:
-    image: twinproduction/gatus:latest
+    image: twinproduction/gatus:v5.38.0
     container_name: status-page-gatus
-    # No host port: Caddy reaches it over the internal compose network.
-    expose:
-      - "8080"
+    # Loopback only. Open the internal dashboard over an SSH tunnel:
+    #   ssh -L 8080:localhost:8080 root@<droplet-ip>
+    ports:
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./config.yaml:/config/config.yaml:ro
       - gatus-data:/data       # SQLite history survives restarts
     env_file:
       - .env
+    restart: unless-stopped
+
+  # The public page reads Gatus over the compose network and shows each check
+  # as up, degraded or down. It holds no secrets.
+  web:
+    build: ./web
+    container_name: status-page-web
+    environment:
+      GATUS_URL: http://gatus:8080
+    expose:
+      - "3000"
+    depends_on:
+      - gatus
     restart: unless-stopped
 
   caddy:
@@ -27,7 +42,7 @@ services:
       - caddy-data:/data        # persisted certs — don't lose these
       - caddy-config:/config
     depends_on:
-      - gatus
+      - web
     restart: unless-stopped
 
 volumes:
