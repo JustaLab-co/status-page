@@ -28,6 +28,12 @@ The public page takes the latest result of each check and shows one state. Up me
 
 The page never shows URLs, conditions, thresholds, errors or alert routing. Those stay in Gatus, whose dashboard and API are only reachable over an SSH tunnel. [docs/SPEC.md](./docs/SPEC.md) has the full rules.
 
+This is how a partial outage reads, here with the MCP server down and the Base bundler degraded:
+
+![Partial outage with the MCP server down and Base degraded](./docs/screenshots/forced-desktop.png)
+
+Mobile views of both states are in [docs/screenshots](./docs/screenshots).
+
 ## Cost — effectively $0
 
 - **Liveness**: static JSON, no auth, no RPC. Free.
