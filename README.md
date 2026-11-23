@@ -44,14 +44,14 @@ Mobile views of both states are in [docs/screenshots](./docs/screenshots).
   dRPC). The only cost is the api-key validation the guard runs per request —
   internal load, not money. Runs every 5min to keep that minimal.
 - **MCP server**: `/api/health` reads one settings row. Free.
-- **Paymaster**: one USDC quote every 5min, through the same api key. Each quote reads current prices once, from CoinGecko or a Chainlink feed depending on the paymaster's config.
+- **Paymaster**: one USDC quote every 15min, through the same api key. Each quote reads current prices once, from CoinGecko or a Chainlink feed depending on the paymaster's config.
 
 So the whole page costs ~$0 in RPC/spend; the only thing to watch is the api
 key's own quota for the bundler checks.
 
 ## Intervals
 
-API gateway 30s (free, fast full-outage detector), MCP server 60s (free), everything else 5min. The resolution checks lean on a free public RPC, so we don't probe it aggressively, and the 20 bundler checks each cost an api-key validation.
+API gateway 30s (free, fast full-outage detector), MCP server 60s (free), paymaster 15min, everything else 5min. The resolution checks lean on a free public RPC, so we don't probe it aggressively, and the 20 bundler checks each cost an api-key validation.
 
 ## Deploy
 

@@ -25,7 +25,7 @@ Every check runs from the droplet against production. A check passes only when a
 |---|---|---|---|
 | MCP server | `GET https://mcp.jaw.id/api/health` | `[STATUS] == 200`, `[BODY].db == ok`, `[BODY].paused == false`, `[RESPONSE_TIME] < 3000` | 60s |
 | Bundler, one per chain | `POST https://api.justaname.id/proxy/v1/rpc?chainId=<id>&api-key=${BUNDLER_API_KEY}` with `eth_chainId` | `[STATUS] == 201`, `[BODY].result == <hex id>`, `[RESPONSE_TIME] < 5000` | 300s |
-| Paymaster | `POST https://api.justaname.id/proxy/v1/rpc/erc20-paymaster?chainId=8453&api-key=${BUNDLER_API_KEY}` with `jaw_getTokenQuotes` for USDC on Base | `[STATUS] == 201`, `[BODY].result.quotes[0].token == 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`, `[RESPONSE_TIME] < 5000` | 300s |
+| Paymaster | `POST https://api.justaname.id/proxy/v1/rpc/erc20-paymaster?chainId=8453&api-key=${BUNDLER_API_KEY}` with `jaw_getTokenQuotes` for USDC on Base | `[STATUS] == 201`, `[BODY].result.quotes[0].token == 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`, `[RESPONSE_TIME] < 5000` | 900s |
 | API gateway | `GET https://api.justaname.id/.well-known/x402.json` | unchanged | 30s |
 | ENS name, batch and reverse resolution | `/ens/v2/resolve` and `/ens/v2/reverse` | unchanged | 300s |
 
@@ -121,7 +121,7 @@ New dependencies come through pnpm with `minimumReleaseAge: 10080` (7 days).
 
 - **Gatus API changes on upgrade.** The image is pinned, and the web app validates the payload so a changed shape shows "Status unavailable" instead of wrong states.
 - **More probes on the api key.** 20 bundler checks every 5 minutes are 10 times the previous api-key validations. They are cheap, but they show up in that key's usage, so the key should be one used only for monitoring.
-- **Paymaster price reads.** One quote every 5 minutes adds about 288 price reads a day to the paymaster's price source.
+- **Paymaster price reads.** One quote every 15 minutes adds about 96 price reads a day to the paymaster's price source.
 - **One failed probe shows down.** The page reflects the latest probe, so a blip shows for up to one interval. Slack alerts still wait for 3 failures in a row.
 - **Alert noise.** A proxy outage fires one Slack alert per keyed check, about 22 at once.
 - **History resets.** Renamed checks start a new history in Gatus.

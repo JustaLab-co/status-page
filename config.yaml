@@ -80,7 +80,7 @@ endpoints:
     group: Core services
     url: "https://api.justaname.id/proxy/v1/rpc/erc20-paymaster?chainId=8453&api-key=${BUNDLER_API_KEY}"
     method: POST
-    interval: 300s
+    interval: 900s
     headers:
       Content-Type: application/json
     body: '{"jsonrpc":"2.0","method":"jaw_getTokenQuotes","params":[{"tokens":["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]},"0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108","0x2105"],"id":1}'
