@@ -1,0 +1,90 @@
+[
+  {
+    "name": "Base",
+    "group": "Bundlers",
+    "key": "bundlers_base",
+    "results": [
+      {
+        "status": 201,
+        "hostname": "api.justaname.id",
+        "duration": 1119132459,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 201",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] (1119) < 1",
+            "success": false
+          },
+          {
+            "condition": "[BODY].result == 0x2105",
+            "success": true
+          }
+        ],
+        "success": false,
+        "timestamp": "2026-11-23T17:42:35.641879088Z"
+      }
+    ]
+  },
+  {
+    "name": "API gateway",
+    "group": "Core services",
+    "key": "core-services_api-gateway",
+    "results": [
+      {
+        "status": 200,
+        "hostname": "api.justaname.id",
+        "duration": 1032284500,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] == 200",
+            "success": true
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 1500",
+            "success": true
+          },
+          {
+            "condition": "[BODY].x402Version != \"\"",
+            "success": true
+          }
+        ],
+        "success": true,
+        "timestamp": "2026-11-23T17:42:31.974334919Z"
+      }
+    ]
+  },
+  {
+    "name": "MCP server",
+    "group": "Core services",
+    "key": "core-services_mcp-server",
+    "results": [
+      {
+        "status": 404,
+        "hostname": "mcp.jaw.id",
+        "duration": 876624084,
+        "conditionResults": [
+          {
+            "condition": "[STATUS] (404) == 200",
+            "success": false
+          },
+          {
+            "condition": "[RESPONSE_TIME] < 3000",
+            "success": true
+          },
+          {
+            "condition": "[BODY].db (INVALID) == ok",
+            "success": false
+          },
+          {
+            "condition": "[BODY].paused (INVALID) == false",
+            "success": false
+          }
+        ],
+        "success": false,
+        "timestamp": "2026-11-23T17:42:32.044270419Z"
+      }
+    ]
+  }
+]

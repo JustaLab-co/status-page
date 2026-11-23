@@ -1,0 +1,4 @@
+# Install only versions published at least 7 days ago, transitive ones
+# included, so a hijacked release is found before it gets here. A security
+# patch that cannot wait goes in minimumReleaseAgeExclude, with the reason.
+minimumReleaseAge: 10080 # minutes

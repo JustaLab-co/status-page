@@ -1,0 +1,338 @@
+/* Tokens and components follow jaw.id, which ships a light theme only. */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/static/fonts/inter-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/static/fonts/jetbrains-mono-latin.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: light;
+  --bg: #fff;
+  --bg-raise: #fafaf9;
+  --line: #e7e5e4;
+  --ink: #0f172a;
+  --ink-2: #475569;
+  --ink-3: #94a3b8;
+  --acc: #0f172a;
+  --acc-deep: #020617;
+  --hero-electric: #455492;
+  --green: #15803d;
+  --amber-700: oklch(55.5% 0.163 48.998);
+  --amber-50: oklch(98.7% 0.022 95.277);
+  --amber-200: oklch(92.4% 0.12 95.746);
+  --red: #dc2626;
+  --red-50: oklch(97.1% 0.013 17.38);
+  --red-200: oklch(88.5% 0.062 18.334);
+  --gray-50: oklch(98.5% 0.002 247.839);
+  --gray-200: oklch(92.8% 0.006 264.531);
+  --gray-600: oklch(44.6% 0.03 256.802);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 68px;
+  padding: 0 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.brand img {
+  display: block;
+}
+
+.brand .suffix {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.pill {
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--bg-raise);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 9px 16px 9px 18px;
+  border: 1px solid var(--acc);
+  border-radius: 99px;
+  background: var(--acc);
+  color: var(--bg);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.button:hover {
+  background: var(--acc-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -8px #0f172a66;
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 20px 96px;
+}
+
+.hero {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 72px 0 48px;
+  text-align: center;
+}
+
+.headline {
+  margin: 0;
+  font-size: clamp(34px, 4.3vw, 58px);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+
+.headline.operational .accent {
+  color: var(--hero-electric);
+}
+
+.headline.degraded .accent {
+  color: var(--amber-700);
+}
+
+.headline.partial-outage .accent,
+.headline.major-outage .accent {
+  color: var(--red);
+}
+
+.headline.unavailable .accent {
+  color: var(--ink-3);
+}
+
+.lede {
+  max-width: 36rem;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.label {
+  margin: 0;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.card {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--bg-raise);
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 14px;
+}
+
+.card-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.check .name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.check .state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.check .latency {
+  min-width: 7ch;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: right;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.check.up .state {
+  color: var(--green);
+}
+
+.check.degraded {
+  border-color: var(--amber-200);
+  background: var(--amber-50);
+}
+
+.check.degraded .state {
+  color: var(--amber-700);
+}
+
+.check.down {
+  border-color: var(--red-200);
+  background: var(--red-50);
+}
+
+.check.down .state {
+  color: var(--red);
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 40px 24px;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
+}
+
+.footer a {
+  color: var(--gray-600);
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--ink);
+}
+
+@media (max-width: 767px) {
+  .nav {
+    height: 60px;
+    padding: 0 20px;
+  }
+
+  .brand {
+    font-size: 20px;
+  }
+
+  .button {
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+
+  .button svg {
+    display: none;
+  }
+
+  .hero {
+    padding: 48px 0 32px;
+  }
+
+  .headline {
+    font-size: clamp(28px, 6.5vw, 40px);
+    line-height: 1.08;
+  }
+
+  .lede {
+    font-size: 15px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .footer a {
+    font-size: 14px;
+  }
+}
