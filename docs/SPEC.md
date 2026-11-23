@@ -77,8 +77,10 @@ Taken from the stylesheets jaw.id serves. jaw.id has no dark theme (no dark toke
 | `--ink` / `--ink-2` / `--ink-3` | `#0f172a` / `#475569` / `#94a3b8` | text levels |
 | `--acc` / `--acc-deep` | `#0f172a` / `#020617` | primary button, logo |
 | `--hero-electric` | `#455492` | headline accent |
-| `--green` / `--amber` / `--red` | `#15803d` / `#d97706` / `#dc2626` | up, degraded, down |
+| `--green` / `--amber-700` / `--red` | `#15803d` / `oklch(55.5% .163 48.998)` / `#dc2626` | up, degraded, down |
 | `--radius` | `.625rem` | base radius |
+
+Degraded uses jaw.id's `--color-amber-700` instead of its `--amber` (`#d97706`). On white, `#d97706` gives about 3.2:1 contrast, under the 4.5:1 that small text needs, and amber-700 gives about 5:1.
 
 Typography: Inter 300 to 700 for text and JetBrains Mono 400 to 600 for labels and numbers, both self-hosted like jaw.id does. Headlines are weight 500, letter spacing `-0.035em`, line height about 1.05, `clamp(34px, 4.3vw, 58px)` on desktop and `clamp(28px, 6.5vw, 40px)` on mobile. Body copy is 17px over 1.6 in `--ink-2`. Small labels are uppercase mono with `0.1em` tracking.
 
@@ -125,7 +127,7 @@ New dependencies come through pnpm with `minimumReleaseAge: 10080` (7 days).
 - **One failed probe shows down.** The page reflects the latest probe, so a blip shows for up to one interval. Slack alerts still wait for 3 failures in a row.
 - **Alert noise.** A proxy outage fires one Slack alert per keyed check, about 22 at once.
 - **History resets.** Renamed checks start a new history in Gatus.
-- **Deploy change.** The droplet needs `docker compose up -d --build`, and the Gatus dashboard moves behind an SSH tunnel.
+- **Deploy change.** The droplet needs `docker compose up -d --build --force-recreate` once, or Caddy keeps its old config and the public domain still serves `/api/v1/endpoints/statuses` and `/metrics`. Both must answer 404 after the upgrade. The Gatus dashboard moves behind an SSH tunnel.
 - **Latency is measured from the droplet,** not from each user's location.
 
 ## Out of scope
