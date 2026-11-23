@@ -1,5 +1,7 @@
 # Gatus config for health.justaname.id
-# Monitors api.justaname.id — CCIP-Read resolution + reverse + liveness.
+# Probes the JAW MCP server, the bundlers, the paymaster and ENS resolution.
+# This instance is internal. The public page is web/, which reads its API and
+# shows only the state of each check, never the conditions below.
 #
 # IMPORTANT — run this OUTSIDE your AWS/EKS (a DigitalOcean droplet, Oracle
 # Cloud Always Free, or a small VPS in another provider/region). If it runs in
@@ -30,9 +32,10 @@ storage:
   # --------------------------------------------------------------------------
 
 ui:
-  title: JustaName Status
-  header: JustaName · api.justaname.id
-  description: Public uptime for the JustaName CCIP-Read gateway and resolution API.
+  title: JAW status (internal)
+  header: JAW status (internal)
+  description: Internal view of the JAW health checks, with conditions and history.
+  default-sort-by: group
 
 # Optional: lower the bar for what counts as "up" globally; per-endpoint
 # conditions below are the real SLA gate.
@@ -43,8 +46,8 @@ endpoints:
   # 1. Liveness — cheap, public, no auth, no payment, no RPC.
   #    /.well-known/x402.json is unversioned at the root and always public.
   # ---------------------------------------------------------------------------
-  - name: api-liveness
-    group: API
+  - name: API gateway
+    group: Core services
     url: "https://api.justaname.id/.well-known/x402.json"
     interval: 30s
     conditions:
@@ -54,14 +57,50 @@ endpoints:
     alerts:
       - type: slack
 
+  # /api/health reads the database and the pause flag. A paused server still
+  # answers 200 here but refuses every other route, so paused must be false.
+  - name: MCP server
+    group: Core services
+    url: "https://mcp.jaw.id/api/health"
+    interval: 60s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 3000"
+      - "[BODY].db == ok"
+      - "[BODY].paused == false"
+    alerts:
+      - type: slack
+
+  # A USDC quote on Base through the proxy, the call wallets make before paying
+  # gas in a token. An empty token list returns before any pricing, so it would
+  # only prove routing. Each probe reads current prices once, from CoinGecko
+  # or a Chainlink feed per the paymaster's config. Same api key and 201
+  # envelope as the bundlers.
+  - name: Paymaster
+    group: Core services
+    url: "https://api.justaname.id/proxy/v1/rpc/erc20-paymaster?chainId=8453&api-key=${BUNDLER_API_KEY}"
+    method: POST
+    interval: 300s
+    headers:
+      Content-Type: application/json
+    body: '{"jsonrpc":"2.0","method":"jaw_getTokenQuotes","params":[{"tokens":["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]},"0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108","0x2105"],"id":1}'
+    ui:
+      hide-url: true                   # the api key is in the query string
+    conditions:
+      - "[STATUS] == 201"
+      - "[RESPONSE_TIME] < 5000"
+      - "[BODY].result.quotes[0].token == 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    alerts:
+      - type: slack
+
   # ---------------------------------------------------------------------------
   # 2. Forward resolution through the CCIP-Read flow (the core promise).
   #    viaUniversalResolver == true proves the CCIP-Read / Universal Resolver
   #    path actually ran — not just that the server returned 200.
   #    X-Rpc-Url makes this free; without it you'd hit the 402 paywall.
   # ---------------------------------------------------------------------------
-  - name: ccip-read-resolve
-    group: CCIP-Read gateway
+  - name: Name resolution
+    group: ENS resolution
     url: "https://api.justaname.id/ens/v2/resolve?ens=${KNOWN_NAME}&coinType=60"
     # Uses RPC_URL (a FREE public node) via X-Rpc-Url, so it costs nothing on
     # JustaName's dRPC account. Kept at 5min on purpose: free public RPCs rate-
@@ -88,8 +127,8 @@ endpoints:
   # 2b. Batch resolve — exercises the multi-name path (?ens=a&ens=b). Response
   #     is an ARRAY here, so the conditions index into [0]. Still free (PublicNode).
   # ---------------------------------------------------------------------------
-  - name: ccip-read-resolve-batch
-    group: CCIP-Read gateway
+  - name: Batch resolution
+    group: ENS resolution
     url: "https://api.justaname.id/ens/v2/resolve?ens=${KNOWN_NAME}&ens=${KNOWN_NAME_2}&coinType=60"
     interval: 300s
     headers:
@@ -104,8 +143,8 @@ endpoints:
   # ---------------------------------------------------------------------------
   # 3. Reverse resolution (ENSIP-19) — second public surface.
   # ---------------------------------------------------------------------------
-  - name: reverse-resolution
-    group: Resolution API
+  - name: Reverse resolution
+    group: ENS resolution
     url: "https://api.justaname.id/ens/v2/reverse?address=${KNOWN_ADDRESS}&coinType=60"
     # Free via PublicNode (X-Rpc-Url), same as resolve.
     interval: 300s
@@ -128,36 +167,118 @@ endpoints:
   #    JSON-RPC body ({jsonrpc,id,result}), so result is the hex chainId directly.
   #    RESPONSE_TIME is 5000 (vs 3000 elsewhere): the proxy regularly spikes to
   #    3-5s on these endpoints, so a lower bar pages on noise rather than outages.
+  #    One check per mainnet that jaw.id lists. Each entry below copies the
+  #    first one (<<: *bundler) and sets its name, chain id and expected result.
   # ---------------------------------------------------------------------------
-  - name: bundler-base
-    group: Bundler
-    url: "https://api.justaname.id/proxy/v1/rpc?chainId=8453&api-key=${BUNDLER_API_KEY}"
+  - &bundler
+    name: ADI Chain
+    group: Bundlers
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=36900&api-key=${BUNDLER_API_KEY}"
     method: POST
     interval: 300s
     headers:
       Content-Type: application/json
     body: '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
-    conditions:
-      - "[STATUS] == 201"
-      - "[RESPONSE_TIME] < 5000"
-      - "[BODY].result == 0x2105"        # 8453
+    ui:
+      hide-url: true                   # the api key is in the query string
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x9024"]
     alerts:
       - type: slack
 
-  - name: bundler-ethereum
-    group: Bundler
+  - <<: *bundler
+    name: Arbitrum One
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=42161&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0xa4b1"]
+
+  - <<: *bundler
+    name: Arc
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=5042&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x13b2"]
+
+  - <<: *bundler
+    name: Avalanche
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=43114&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0xa86a"]
+
+  - <<: *bundler
+    name: Base
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=8453&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x2105"]
+
+  - <<: *bundler
+    name: BNB Smart Chain
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=56&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x38"]
+
+  - <<: *bundler
+    name: Celo
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=42220&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0xa4ec"]
+
+  - <<: *bundler
+    name: Citrea
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=4114&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x1012"]
+
+  - <<: *bundler
+    name: Ethereum
     url: "https://api.justaname.id/proxy/v1/rpc?chainId=1&api-key=${BUNDLER_API_KEY}"
-    method: POST
-    interval: 300s
-    headers:
-      Content-Type: application/json
-    body: '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
-    conditions:
-      - "[STATUS] == 201"
-      - "[RESPONSE_TIME] < 5000"
-      - "[BODY].result == 0x1"           # 1
-    alerts:
-      - type: slack
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x1"]
+
+  - <<: *bundler
+    name: Flare
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=14&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0xe"]
+
+  - <<: *bundler
+    name: Gnosis
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=100&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x64"]
+
+  - <<: *bundler
+    name: HyveChain
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=7847&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x1ea7"]
+
+  - <<: *bundler
+    name: Ink
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=57073&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0xdef1"]
+
+  - <<: *bundler
+    name: Linea
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=59144&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0xe708"]
+
+  - <<: *bundler
+    name: Monad
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=143&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x8f"]
+
+  - <<: *bundler
+    name: OP Mainnet
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=10&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0xa"]
+
+  - <<: *bundler
+    name: Polygon
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=137&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x89"]
+
+  - <<: *bundler
+    name: Robinhood Chain
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=4663&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x1237"]
+
+  - <<: *bundler
+    name: Soneium
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=1868&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x74c"]
+
+  - <<: *bundler
+    name: Unichain
+    url: "https://api.justaname.id/proxy/v1/rpc?chainId=130&api-key=${BUNDLER_API_KEY}"
+    conditions: ["[STATUS] == 201", "[RESPONSE_TIME] < 5000", "[BODY].result == 0x82"]
 
 # ---------------------------------------------------------------------------
 # Alerting — fill in the Slack webhook (or swap for pagerduty/discord/email).
