@@ -72,6 +72,14 @@ describe('check state', () => {
       'down',
     ])
   })
+
+  it('is down when a slow answer is also wrong', () => {
+    const slowAndBroken = endpoint('Base', 'Bundlers', {
+      success: false,
+      conditionResults: [failed('[STATUS] (502) == 201'), failed('[RESPONSE_TIME] (6120) < 5000')],
+    })
+    expect(stateOf(boardOf(slowAndBroken), 'Base')).toBe('down')
+  })
 })
 
 describe('a real Gatus v5.38.0 payload', () => {
