@@ -22,6 +22,7 @@ services:
   # as up, degraded or down. It holds no secrets.
   web:
     build: ./web
+    init: true               # node as PID 1 ignores SIGTERM, stop would wait 10s
     container_name: status-page-web
     environment:
       GATUS_URL: http://gatus:8080
