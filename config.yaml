@@ -140,6 +140,9 @@ endpoints:
       - "[RESPONSE_TIME] < 5000"
       - "[BODY].statusCode == 200"
       - "[BODY].result.data[0].ens == ${KNOWN_NAME}"
+    alerts:
+      - type: slack
+        send-on-resolved: true
 
   # ---------------------------------------------------------------------------
   # 3. Reverse resolution (ENSIP-19) — second public surface.
