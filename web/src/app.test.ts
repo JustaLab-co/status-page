@@ -46,7 +46,8 @@ const failing = [
   },
 ]
 
-const get = (path: string, load: () => Promise<unknown>) => createApp(load).request(path)
+const get = (path: string, load: () => Promise<unknown>, configured = failing.length) =>
+  createApp(load, configured).request(path)
 
 describe('GET /', () => {
   it('shows each check with its state and latency', async () => {
@@ -73,6 +74,15 @@ describe('GET /', () => {
 
     expect(response.status).toBe(503)
     expect(await response.text()).toContain('Status <span class="accent">unavailable.</span>')
+  })
+
+  it('answers 503 while some configured checks have no result yet', async () => {
+    const [down, slow] = failing
+    const upMcp = { ...slow, results: [{ ...slow?.results[0], success: true }] }
+
+    expect((await get('/', () => Promise.resolve([]), 2)).status).toBe(503)
+    expect((await get('/', () => Promise.resolve([upMcp]), 2)).status).toBe(503)
+    expect((await get('/', () => Promise.resolve([down, upMcp]), 2)).status).toBe(200)
   })
 
   it('answers 503 when Gatus answers something unexpected or has no probes yet', async () => {

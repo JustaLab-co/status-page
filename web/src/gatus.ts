@@ -1,3 +1,4 @@
+import { parse } from 'yaml'
 import { z } from 'zod'
 
 const result = z.object({
@@ -32,6 +33,12 @@ export function parseProbes(raw: unknown): Probe[] {
       const latest = results.at(-1)
       return latest ? [{ name, group, latest }] : []
     })
+}
+
+// Gatus lists a check only after its first result, so the page compares what it
+// got with what the config declares.
+export function countChecks(configYaml: string): number {
+  return z.object({ endpoints: z.array(z.unknown()) }).parse(parse(configYaml)).endpoints.length
 }
 
 export async function fetchStatuses(gatusUrl: string): Promise<unknown> {

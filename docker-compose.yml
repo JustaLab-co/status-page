@@ -19,13 +19,17 @@ services:
     restart: unless-stopped
 
   # The public page reads Gatus over the compose network and shows each check
-  # as up, degraded or down. It holds no secrets.
+  # as up, degraded or down. It reads config.yaml only to count the checks, and
+  # holds no secrets.
   web:
     build: ./web
     init: true               # node as PID 1 ignores SIGTERM, stop would wait 10s
     container_name: status-page-web
     environment:
       GATUS_URL: http://gatus:8080
+      GATUS_CONFIG: /config/config.yaml
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
     expose:
       - "3000"
     depends_on:

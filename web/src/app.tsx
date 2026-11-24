@@ -6,7 +6,7 @@ import { toBoard } from './board.js'
 import { parseProbes } from './gatus.js'
 import { BoardPage, UnavailablePage } from './page.js'
 
-export function createApp(loadStatuses: () => Promise<unknown>): Hono {
+export function createApp(loadStatuses: () => Promise<unknown>, configuredChecks: number): Hono {
   const app = new Hono()
 
   app.use(secureHeaders({ contentSecurityPolicy: { defaultSrc: ["'self'"] } }))
@@ -24,7 +24,7 @@ export function createApp(loadStatuses: () => Promise<unknown>): Hono {
     c.header('Cache-Control', 'no-store')
     const board = await loadStatuses()
       .then(parseProbes)
-      .then(toBoard)
+      .then((probes) => (probes.length < configuredChecks ? undefined : toBoard(probes)))
       .catch((error: unknown) => {
         console.error('cannot read Gatus statuses', error)
         return undefined

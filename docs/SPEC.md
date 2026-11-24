@@ -48,7 +48,7 @@ The web app derives one state per check from the latest Gatus result:
 
 The Gatus checks keep their condition results (no `ui.hide-conditions`), because the web app reads them to tell slow from broken. Gatus is no longer public, so this exposes nothing.
 
-The headline uses the whole board: "All systems operational" when everything is up, "Degraded performance" when something is degraded and nothing is down, "Partial outage" when some checks are down, "Major outage" when all are. If Gatus cannot be read, or answers with an unexpected shape, the page says "Status unavailable" and returns 503. It never shows "operational" without data.
+The headline uses the whole board: "All systems operational" when everything is up, "Degraded performance" when something is degraded and nothing is down, "Partial outage" when some checks are down, "Major outage" when all are. If Gatus cannot be read, or answers with an unexpected shape, the page says "Status unavailable" and returns 503. It never shows "operational" without data. Gatus lists a check only after its first result, so the page reads `config.yaml` at startup to count the checks and answers "Status unavailable" until every one of them has a result.
 
 Sections come from the Gatus `group` field and rows from `name`. Sections render in a fixed order (Core services, Bundlers, ENS resolution) and rows sort by name.
 

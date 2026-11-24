@@ -115,7 +115,7 @@ ssh -L 8080:localhost:8080 root@<droplet-ip>   # then http://localhost:8080
 **Update config / code**
 ```bash
 git pull
-docker compose restart gatus       # reloads config.yaml (bind-mounted)
+docker compose restart gatus web   # both read config.yaml (bind-mounted)
 docker compose up -d --build web   # rebuilds the public page after web/ changes
 ```
 

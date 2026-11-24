@@ -22,6 +22,9 @@ services:
       - "3000:3000"
     environment:
       GATUS_URL: http://gatus:8080
+      GATUS_CONFIG: /config/config.yaml
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
     depends_on:
       - gatus
     restart: unless-stopped
