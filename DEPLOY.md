@@ -120,6 +120,8 @@ docker compose up -d --build web   # rebuilds the public page after web/ changes
 ```
 
 **Upgrade from the Gatus-only setup** (once). `--force-recreate` makes Caddy load the new Caddyfile, which routes to the public page instead of Gatus. Then run the 404 checks from step 7.
+
+Every check is renamed, so Gatus deletes the old checks with their history and any firing alert, whose resolved message never reaches Slack. Back up the `gatus-data` volume first if the history matters, and upgrade while no alert is firing.
 ```bash
 git pull
 docker compose up -d --build --force-recreate
