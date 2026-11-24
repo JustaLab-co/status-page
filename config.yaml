@@ -92,6 +92,7 @@ endpoints:
       - "[BODY].result.quotes[0].token == 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
     alerts:
       - type: slack
+        failure-threshold: 2           # probes every 15 min: Slack 15 to 30 min after an outage starts
 
   # ---------------------------------------------------------------------------
   # 2. Forward resolution through the CCIP-Read flow (the core promise).
