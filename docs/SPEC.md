@@ -4,7 +4,7 @@
 
 Give JAW users one public page that answers "is it working right now?" for the services they depend on: the hosted MCP server, the bundler on each supported chain, the paymaster, and ENS resolution. The page shows a state per service (up, degraded, down) and the latency of the last probe, and nothing else. Thresholds, error details and alert routing stay internal.
 
-Success means a user can open `health.justaname.id`, see the state of every service in a layout that looks like jaw.id, and the operator keeps the same Gatus probes, history and Slack alerts behind it.
+Success means a user can open `health.jaw.id` (also served at `health.justaname.id`), see the state of every service in a layout that looks like jaw.id, and the operator keeps the same Gatus probes, history and Slack alerts behind it.
 
 ## Architecture
 

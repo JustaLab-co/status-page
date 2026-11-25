@@ -1,6 +1,6 @@
 # JAW Status Page
 
-Public status page for **health.justaname.id**. It shows whether the JAW MCP server, the bundler on each chain, the paymaster and ENS resolution are up, degraded or down, with a 99.9% monthly uptime target.
+Public status page for **health.jaw.id** (also served at health.justaname.id). It shows whether the JAW MCP server, the bundler on each chain, the paymaster and ENS resolution are up, degraded or down, with a 99.9% monthly uptime target.
 
 [Gatus](https://github.com/TwiN/gatus) runs the checks, keeps the history and sends the Slack alerts, and stays internal. A small page in `web/` reads the Gatus API and shows only the state and latency of each check, in the jaw.id look. Everything runs on a DigitalOcean droplet, **outside** the AWS/EKS infra it monitors, so the status page stays up to report an outage instead of going down with it.
 
@@ -61,7 +61,7 @@ DNS, secrets, TLS). Short version:
 ```bash
 git clone https://github.com/JustaName-id/status-page.git && cd status-page
 cp .env.example .env     # fill in RPC_URL, KNOWN_NAME(_2), KNOWN_ADDRESS, BUNDLER_API_KEY, SLACK_WEBHOOK_URL
-docker compose up -d --build   # Gatus, the public page and Caddy (auto-HTTPS for health.justaname.id)
+docker compose up -d --build   # Gatus, the public page and Caddy (auto-HTTPS for health.jaw.id and health.justaname.id)
 ```
 
 ## Local preview
@@ -96,6 +96,6 @@ block in `config.yaml`).
 - `web/`: the public page (Hono, TypeScript, server-rendered)
 - `docker-compose.yml`: Gatus, the public page and Caddy (prod, auto-HTTPS)
 - `docker-compose.local.yml`: Gatus and the public page (preview)
-- `Caddyfile`: reverse proxy to the public page, Let's Encrypt for `health.justaname.id`
+- `Caddyfile`: reverse proxy to the public page, Let's Encrypt for `health.jaw.id` and `health.justaname.id`
 - `.env.example`: required environment variables
 - `docs/SPEC.md`: checks, state rules, public vs internal split, visual tokens

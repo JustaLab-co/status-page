@@ -1,7 +1,8 @@
 # Auto-HTTPS reverse proxy for the status page.
-# Caddy fetches + renews a Let's Encrypt cert for this domain automatically.
-# Requirements: health.justaname.id A-record -> droplet IP, ports 80 & 443 open.
+# Caddy fetches + renews a Let's Encrypt cert for each domain automatically.
+# Requirements: health.jaw.id and health.justaname.id A-records -> droplet IP,
+# ports 80 & 443 open.
 # Only the public page is routed. Gatus and its API stay off the internet.
-health.justaname.id {
+health.jaw.id, health.justaname.id {
 	reverse_proxy web:3000
 }
