@@ -1,6 +1,7 @@
 # Gatus + the public page + Caddy on a DigitalOcean droplet (outside AWS).
 # Caddy terminates TLS and auto-issues a Let's Encrypt cert for the domain in
-# Caddyfile — point health.justaname.id's A record at the droplet IP first.
+# Caddyfile — point the A records of health.jaw.id and health.justaname.id at
+# the droplet IP first.
 # Caddy routes only to the public page. Gatus stays internal.
 
 services:

@@ -1,7 +1,8 @@
 # Deploy on DigitalOcean
 
 Step-by-step to run the status page on a DigitalOcean droplet and serve it at
-`https://health.justaname.id`. The droplet lives outside AWS on purpose — the
+`https://health.jaw.id` (`https://health.justaname.id` serves the same page).
+The droplet lives outside AWS on purpose — the
 status page must survive an `api.justaname.id` outage.
 
 ---
@@ -20,13 +21,14 @@ Note the droplet's public IPv4.
 
 ## 2. DNS
 
-In the DNS for `justaname.id`, add an **A record**:
+Add an **A record** in the DNS for `jaw.id` and one in the DNS for `justaname.id`:
 
 ```
+health.jaw.id        ->  <droplet-ip>
 health.justaname.id  ->  <droplet-ip>
 ```
 
-Wait until it resolves (`dig +short health.justaname.id` returns the IP). Caddy
+Wait until both resolve (`dig +short health.jaw.id` returns the IP). Caddy
 needs this working before it can issue the TLS cert.
 
 ## 3. Install Docker (skip if you used the Docker Marketplace image)
@@ -78,11 +80,12 @@ docker compose up -d --build
 ```
 
 This builds the public page and starts **Gatus**, the page (`web`) and **Caddy**. Caddy routes the domain to the page only. Caddy automatically fetches a Let's Encrypt
-cert for `health.justaname.id` (that's why DNS must be live first). Within a
+cert for each domain (that's why DNS must be live first). Within a
 minute:
 
 ```
-https://health.justaname.id   ->  the status page
+https://health.jaw.id         ->  the status page
+https://health.justaname.id   ->  the same page
 ```
 
 ## 7. Verify
@@ -93,13 +96,13 @@ docker compose logs -f gatus       # check config loaded, no panics
 curl -s localhost:8080/health      # gatus liveness -> 200
 ```
 
-Open `https://health.justaname.id`. Every check should show as operational (the bundler and paymaster ones need a valid `BUNDLER_API_KEY`).
+Open `https://health.jaw.id`. Every check should show as operational (the bundler and paymaster ones need a valid `BUNDLER_API_KEY`).
 
 Gatus must not answer on the public domain. Both of these should print 404:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://health.justaname.id/api/v1/endpoints/statuses
-curl -s -o /dev/null -w '%{http_code}\n' https://health.justaname.id/metrics
+curl -s -o /dev/null -w '%{http_code}\n' https://health.jaw.id/api/v1/endpoints/statuses
+curl -s -o /dev/null -w '%{http_code}\n' https://health.jaw.id/metrics
 ```
 
 The Gatus dashboard, with conditions and history, is internal. It listens on the droplet's loopback only, so open it through an SSH tunnel:
@@ -157,7 +160,8 @@ these at it so history + certs survive a rebuild.
   not a header. Any valid JustaName key works; check it has no blocking domain
   allowlist.
 - **Caddy can't get a cert** → DNS not pointing at the droplet yet, or 80/443
-  blocked. Confirm `dig +short health.justaname.id` and the firewall.
+  blocked. Confirm `dig +short health.jaw.id`
+  (and `health.justaname.id`) and the firewall.
 - **The page says "Status unavailable"** → the page cannot read Gatus, or Gatus has not finished its first probes. Check `docker compose logs web` and `docker compose ps gatus`.
 
 ---

@@ -1,4 +1,4 @@
-# Gatus config for health.justaname.id
+# Gatus config for health.jaw.id (also served at health.justaname.id)
 # Probes the JAW MCP server, the bundlers, the paymaster and ENS resolution.
 # This instance is internal. The public page is web/, which reads its API and
 # shows only the state of each check, never the conditions below.

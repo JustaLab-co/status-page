@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/JustaName-id/status-page/security/advisories/new
     about: Report privately. Do not open a public issue for security problems.
   - name: JustaName status page (live)
-    url: https://health.justaname.id
+    url: https://health.jaw.id
     about: Check the live status before filing — the issue may already be visible there.
