@@ -12,3 +12,10 @@
 # Local Gatus data (when running via docker-compose)
 data/
 *.db
+
+# Public page build output
+node_modules/
+dist/
+
+# Local tool config
+.claude/
