@@ -1,4 +1,4 @@
-# JustaName Status Page
+# JAW Status Page
 
 Public status page for **health.justaname.id**. It shows whether the JAW MCP server, the bundler on each chain, the paymaster and ENS resolution are up, degraded or down, with a 99.9% monthly uptime target.
 
